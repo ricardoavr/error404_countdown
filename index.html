@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Error 404: Countdown Tracker</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Bebas+Neue&family=Inter:wght@300;400&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #0a0a0a;
+      --surface: #111111;
+      --border: #1e1e1e;
+      --accent: #ff3c00;
+      --accent2: #ffaa00;
+      --text: #e8e8e8;
+      --muted: #555;
+      --mono: 'Share Tech Mono', monospace;
+      --display: 'Bebas Neue', cursive;
+      --body: 'Inter', sans-serif;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--body);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* Scanline overlay */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(0,0,0,0.08) 2px,
+        rgba(0,0,0,0.08) 4px
+      );
+      pointer-events: none;
+      z-index: 100;
+    }
+
+    /* Noise grain */
+    body::after {
+      content: '';
+      position: fixed;
+      inset: -50%;
+      width: 200%;
+      height: 200%;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 99;
+      opacity: 0.4;
+    }
+
+    /* ── HEADER ── */
+    header {
+      border-bottom: 1px solid var(--border);
+      padding: 1.5rem 2rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      position: relative;
+    }
+
+    .error-badge {
+      font-family: var(--mono);
+      font-size: 0.7rem;
+      color: var(--accent);
+      border: 1px solid var(--accent);
+      padding: 0.2rem 0.5rem;
+      letter-spacing: 0.1em;
+      animation: blink 2s step-end infinite;
+    }
+
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+
+    .site-title {
+      font-family: var(--display);
+      font-size: 1.6rem;
+      letter-spacing: 0.05em;
+      color: var(--text);
+    }
+
+    .site-title span {
+      color: var(--accent);
+    }
+
+    header .sys-info {
+      margin-left: auto;
+      font-family: var(--mono);
+      font-size: 0.65rem;
+      color: var(--muted);
+      text-align: right;
+      line-height: 1.6;
+    }
+
+    /* ── MAIN ── */
+    main {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 3rem 2rem;
+      display: flex;
+      flex-direction: column;
+      gap: 2.5rem;
+    }
+
+    /* ── TIMER CARD ── */
+    .timer-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      position: relative;
+      overflow: hidden;
+      animation: fadeSlide 0.6s ease both;
+    }
+
+    .timer-card:nth-child(1) { animation-delay: 0.1s; }
+    .timer-card:nth-child(2) { animation-delay: 0.25s; }
+
+    @keyframes fadeSlide {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Accent bar top */
+    .timer-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+    }
+
+    /* TBD card uses muted */
+    .timer-card.tbd::before {
+      background: var(--border);
+    }
+
+    .card-header {
+      padding: 1.2rem 1.5rem 1rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: flex-start;
+      gap: 1rem;
+    }
+
+    .card-index {
+      font-family: var(--mono);
+      font-size: 0.65rem;
+      color: var(--accent);
+      background: rgba(255,60,0,0.08);
+      padding: 0.2rem 0.4rem;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    .tbd .card-index {
+      color: var(--muted);
+      background: rgba(85,85,85,0.15);
+    }
+
+    .card-meta {
+      flex: 1;
+    }
+
+    .card-title {
+      font-family: var(--display);
+      font-size: 1.3rem;
+      letter-spacing: 0.04em;
+      line-height: 1.2;
+      color: var(--text);
+    }
+
+    .card-sub {
+      font-family: var(--mono);
+      font-size: 0.62rem;
+      color: var(--muted);
+      margin-top: 0.3rem;
+      letter-spacing: 0.05em;
+    }
+
+    /* ── COUNTDOWN DISPLAY ── */
+    .countdown-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0;
+      padding: 1.5rem;
+    }
+
+    .unit {
+      flex: 1;
+      min-width: 80px;
+      text-align: center;
+      padding: 1rem 0.5rem;
+      border-right: 1px solid var(--border);
+      position: relative;
+    }
+
+    .unit:last-child { border-right: none; }
+
+    .unit-value {
+      font-family: var(--display);
+      font-size: clamp(2.2rem, 5vw, 3.5rem);
+      line-height: 1;
+      color: var(--text);
+      letter-spacing: 0.02em;
+      transition: color 0.1s;
+    }
+
+    /* Flash on update */
+    .unit-value.tick {
+      color: var(--accent);
+    }
+
+    .unit-label {
+      font-family: var(--mono);
+      font-size: 0.55rem;
+      color: var(--muted);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      margin-top: 0.4rem;
+    }
+
+    /* Progress bar */
+    .progress-row {
+      padding: 0 1.5rem 1.2rem;
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+    }
+
+    .progress-track {
+      flex: 1;
+      height: 2px;
+      background: var(--border);
+      position: relative;
+    }
+
+    .progress-fill {
+      position: absolute;
+      left: 0; top: 0; bottom: 0;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      transition: width 1s linear;
+    }
+
+    .progress-pct {
+      font-family: var(--mono);
+      font-size: 0.6rem;
+      color: var(--accent);
+      flex-shrink: 0;
+    }
+
+    /* ── TBD CARD ── */
+    .tbd-body {
+      padding: 2.5rem 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 1.2rem;
+      color: var(--muted);
+    }
+
+    .tbd-icon {
+      font-size: 1.8rem;
+      opacity: 0.4;
+    }
+
+    .tbd-text {
+      font-family: var(--mono);
+      font-size: 0.7rem;
+      letter-spacing: 0.08em;
+      line-height: 1.7;
+    }
+
+    .tbd-text strong {
+      display: block;
+      font-size: 0.85rem;
+      color: #444;
+      margin-bottom: 0.2rem;
+    }
+
+    /* ── FOOTER ── */
+    footer {
+      text-align: center;
+      padding: 2rem;
+      font-family: var(--mono);
+      font-size: 0.6rem;
+      color: #2a2a2a;
+      letter-spacing: 0.08em;
+      border-top: 1px solid var(--border);
+    }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 600px) {
+      .unit { min-width: 60px; padding: 0.8rem 0.2rem; }
+      .card-header { flex-direction: column; gap: 0.5rem; }
+      header { flex-wrap: wrap; }
+      .sys-info { margin-left: 0; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="error-badge">ERR_404</div>
+  <div class="site-title">ERROR 404<span>:</span> COUNTDOWN TRACKER</div>
+  <div class="sys-info" id="live-clock">
+    SISTEMA ACTIVO<br/>--:--:-- --/--/----
+  </div>
+</header>
+
+<main>
+
+  <!-- TIMER 1: JetSMART -->
+  <div class="timer-card" id="card-jetsmart">
+    <div class="card-header">
+      <div class="card-index">TIMER_01</div>
+      <div class="card-meta">
+        <div class="card-title">JetSMART — All You Can Fly Membership</div>
+        <div class="card-sub">INICIO: 09 APR 2026 &nbsp;|&nbsp; FIN: 09 OCT 2026 &nbsp;|&nbsp; DURACIÓN: 6 MESES</div>
+      </div>
+    </div>
+
+    <div class="countdown-grid" id="cd-jetsmart">
+      <div class="unit"><div class="unit-value" id="js-years">00</div><div class="unit-label">Años</div></div>
+      <div class="unit"><div class="unit-value" id="js-months">00</div><div class="unit-label">Meses</div></div>
+      <div class="unit"><div class="unit-value" id="js-days">00</div><div class="unit-label">Días</div></div>
+      <div class="unit"><div class="unit-value" id="js-hours">00</div><div class="unit-label">Horas</div></div>
+      <div class="unit"><div class="unit-value" id="js-minutes">00</div><div class="unit-label">Minutos</div></div>
+      <div class="unit"><div class="unit-value" id="js-seconds">00</div><div class="unit-label">Segundos</div></div>
+    </div>
+
+    <div class="progress-row">
+      <div class="progress-track">
+        <div class="progress-fill" id="js-progress" style="width:0%"></div>
+      </div>
+      <div class="progress-pct" id="js-pct">0.00%</div>
+    </div>
+  </div>
+
+  <!-- TIMER 2: TBD -->
+  <div class="timer-card tbd" id="card-tbd">
+    <div class="card-header">
+      <div class="card-index">TIMER_02</div>
+      <div class="card-meta">
+        <div class="card-title">TBD — Por Definir</div>
+        <div class="card-sub">PENDIENTE DE CONFIGURACIÓN</div>
+      </div>
+    </div>
+    <div class="tbd-body">
+      <div class="tbd-icon">⧖</div>
+      <div class="tbd-text">
+        <strong>SLOT DISPONIBLE</strong>
+        Este countdown está reservado para una fecha futura.<br/>
+        Edita el archivo <code>index.html</code> para configurarlo.
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<footer>ERROR 404: COUNTDOWN TRACKER &nbsp;·&nbsp; GITHUB PAGES &nbsp;·&nbsp; ALL SYSTEMS NOMINAL</footer>
+
+<script>
+  // ── Live clock ──
+  function updateClock() {
+    const now = new Date();
+    const time = now.toLocaleTimeString('es-PE', { hour12: false });
+    const date = now.toLocaleDateString('es-PE', { day:'2-digit', month:'2-digit', year:'numeric' });
+    document.getElementById('live-clock').innerHTML = `SISTEMA ACTIVO<br/>${time} &nbsp; ${date}`;
+  }
+
+  // ── JetSMART Timer ──
+  // Start: April 9, 2026 00:00:00 (local time)
+  // End:   October 9, 2026 00:00:00 (local time)
+  const JS_START = new Date(2026, 3, 9, 0, 0, 0).getTime();   // month is 0-indexed
+  const JS_END   = new Date(2026, 9, 9, 0, 0, 0).getTime();
+  const JS_TOTAL = JS_END - JS_START;
+
+  function pad(n) { return String(Math.max(0, n)).padStart(2, '0'); }
+
+  function calcComponents(ms) {
+    if (ms <= 0) return { years:0, months:0, days:0, hours:0, minutes:0, seconds:0 };
+    let totalSec = Math.floor(ms / 1000);
+    const seconds = totalSec % 60; totalSec = Math.floor(totalSec / 60);
+    const minutes = totalSec % 60; totalSec = Math.floor(totalSec / 60);
+    const hours   = totalSec % 24; totalSec = Math.floor(totalSec / 24);
+    // Approximate months (30.4375 days/month)
+    const years   = Math.floor(totalSec / 365);
+    const remDays = totalSec % 365;
+    const months  = Math.floor(remDays / 30.4375);
+    const days    = Math.floor(remDays % 30.4375);
+    return { years, months, days, hours, minutes, seconds };
+  }
+
+  function flashTick(id) {
+    const el = document.getElementById(id);
+    el.classList.add('tick');
+    setTimeout(() => el.classList.remove('tick'), 150);
+  }
+
+  let prevSec = -1;
+
+  function updateJetSmart() {
+    const now      = Date.now();
+    const remaining = JS_END - now;
+    const elapsed   = now - JS_START;
+
+    const c = calcComponents(Math.max(0, remaining));
+
+    document.getElementById('js-years').textContent   = pad(c.years);
+    document.getElementById('js-months').textContent  = pad(c.months);
+    document.getElementById('js-days').textContent    = pad(c.days);
+    document.getElementById('js-hours').textContent   = pad(c.hours);
+    document.getElementById('js-minutes').textContent = pad(c.minutes);
+    document.getElementById('js-seconds').textContent = pad(c.seconds);
+
+    if (c.seconds !== prevSec) {
+      flashTick('js-seconds');
+      prevSec = c.seconds;
+    }
+
+    // Progress
+    const pct = Math.min(100, Math.max(0, (elapsed / JS_TOTAL) * 100));
+    document.getElementById('js-progress').style.width = pct.toFixed(4) + '%';
+    document.getElementById('js-pct').textContent = pct.toFixed(2) + '%';
+
+    // Expired state
+    if (remaining <= 0) {
+      document.getElementById('js-pct').textContent = '100.00% — EXPIRADO';
+    }
+  }
+
+  // ── Init ──
+  updateClock();
+  updateJetSmart();
+  setInterval(() => { updateClock(); updateJetSmart(); }, 1000);
+</script>
+</body>
+</html>
